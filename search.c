@@ -21,15 +21,18 @@ int main(int argc , char * argv[]){
 
 	/* Find out number of process */
 	MPI_Comm_size(MPI_COMM_WORLD, &p);
-	printf("%d\n",my_rank);
 
+	char query[1024];
 	if( my_rank == 0){ /// master thread
 		int sz_for_process = number_of_files/(p-1);
 		int l = 1 , u = sz_for_process ;
+		gets(query);
+		printf("query is : %s \n",query);
 		for(int i = 1 ; i < p ; ++i){
 
 			MPI_Send(&l, 1, MPI_INT, i, tag, MPI_COMM_WORLD);
 			MPI_Send(&u, 1, MPI_INT, i, tag, MPI_COMM_WORLD);
+			MPI_Send(query, 1024, MPI_CHAR, i, tag, MPI_COMM_WORLD);
 			if(i!=p-2){
 				l = u+1 , u = l + sz_for_process -1;
 			}
@@ -43,7 +46,7 @@ int main(int argc , char * argv[]){
 			MPI_Recv(&tmpcnt, 1, MPI_INT, i, tag, MPI_COMM_WORLD, &status);
 			cnt+=tmpcnt;
 		}
-		printf("%d\n", cnt);
+		printf("number of results = %d\n", cnt);
 	}
 	else{ /// slave
 		/// each slave recieve a lower and upper bound for the files numbers
@@ -51,7 +54,8 @@ int main(int argc , char * argv[]){
 		int lower_bound = 0 , upper_bound = -1;
 		MPI_Recv(&lower_bound, 1, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
 		MPI_Recv(&upper_bound, 1, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
-		char query[1024] =  "food chain";
+		// char query[1024] =  "food chain";
+		MPI_Recv(query, 1024, MPI_CHAR, 0, tag, MPI_COMM_WORLD, &status);
 		char delim[] = " ";
 		int cnt =  0 ;
 		for(int i = lower_bound ; i <= upper_bound ; ++i){
