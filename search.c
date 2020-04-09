@@ -12,7 +12,7 @@ int main(int argc , char * argv[]){
 	int dest;		/* rank of reciever	*/
 	int tag = 0;		/* tag for messages	*/
 	MPI_Status status;	/* return status for 	*/
-
+	int number_of_files = 50 ; 
 	/* Start up MPI */
 	MPI_Init( &argc , &argv );
 
@@ -24,9 +24,19 @@ int main(int argc , char * argv[]){
 	printf("%d\n",my_rank);
 
 	if( my_rank == 0){ /// master thread
-		int l = 1 , u = 50 ;
-		MPI_Send(&l, 1, MPI_INT, 1, tag, MPI_COMM_WORLD);
-		MPI_Send(&u, 1, MPI_INT, 1, tag, MPI_COMM_WORLD);
+		int sz_for_process = number_of_files/(p-1);
+		int l = 1 , u = sz_for_process ;
+		for(int i = 1 ; i < p ; ++i){
+
+			MPI_Send(&l, 1, MPI_INT, i, tag, MPI_COMM_WORLD);
+			MPI_Send(&u, 1, MPI_INT, i, tag, MPI_COMM_WORLD);
+			if(i!=p-2){
+				l = u+1 , u = l + sz_for_process -1;
+			}
+			else {/// we add all remaining 
+				l = u+1 , u = number_of_files;
+			}
+		}
 		int cnt = 0 ;
 		for(int i = 1 ; i < p ; ++i){
 			int tmpcnt = 0 ;
@@ -36,14 +46,12 @@ int main(int argc , char * argv[]){
 		printf("%d\n", cnt);
 	}
 	else{ /// slave
-	//			MPI_Send( mat2[j], x, MPI_INT, (i)%(p-1) +1, tag, MPI_COMM_WORLD); ///sending matrix 2
-	//		MPI_Recv(row2, x, MPI_INT, (i)%(p-1) +1, tag, MPI_COMM_WORLD, &status);			
 		/// each slave recieve a lower and upper bound for the files numbers
 		/// and will iterate over them and find the matches
 		int lower_bound = 0 , upper_bound = -1;
 		MPI_Recv(&lower_bound, 1, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
 		MPI_Recv(&upper_bound, 1, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
-		char query[1024] =  "Energy";
+		char query[1024] =  "food chain";
 		char delim[] = " ";
 		int cnt =  0 ;
 		for(int i = lower_bound ; i <= upper_bound ; ++i){
@@ -72,7 +80,7 @@ int main(int argc , char * argv[]){
 		    		char tmpline[2048];
 		    		//printf("%s\n" , ptr);
 		    		strcpy(tmpline , line);
-		    		printf("%s\n",tmpline);
+		    		//printf("%s\n",tmpline);
 		    		if(strstr(tmpline, ptr) == NULL){
 		    			found = -1;
 		    		}
@@ -81,7 +89,7 @@ int main(int argc , char * argv[]){
 		    	}
 		    	if(found == 1){ /// we found all query words in this line
 		    		cnt++;
-		    		printf("%s\n",line);
+		    		printf("%s",line);
 		    	}
 		    	
 		    }
